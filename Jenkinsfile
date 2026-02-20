@@ -39,6 +39,13 @@ pipeline {
                 bat 'npm run build'
             }
         }
+        
+        stage('Deploy to GitHub Pages') {
+            steps {
+                echo 'Deploying built index to gh-pages branch...'
+                bat 'npx gh-pages -d dist'
+            }
+        }
     }
     
     post {

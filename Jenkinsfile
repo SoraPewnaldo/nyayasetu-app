@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        node {
+            customWorkspace 'D:\\Jenkins_pipeline'
+        }
+    }
     
     tools {
         // Requires NodeJS plugin to be installed and NodeJS configured in Global Tool Configuration

@@ -21,22 +21,22 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
-                sh 'npm cache clean --force'
-                sh 'npm install'
+                bat 'npm cache clean --force'
+                bat 'npm install'
             }
         }
         
         stage('Lint') {
             steps {
                 echo 'Linting code...'
-                sh 'npm run lint'
+                bat 'npm run lint'
             }
         }
         
         stage('Build') {
             steps {
                 echo 'Building application...'
-                sh 'npm run build'
+                bat 'npm run build'
             }
         }
     }

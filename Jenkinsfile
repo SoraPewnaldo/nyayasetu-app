@@ -1,6 +1,7 @@
 pipeline {
     agent {
         node {
+            label ''
             customWorkspace 'D:\\Jenkins_pipeline'
         }
     }

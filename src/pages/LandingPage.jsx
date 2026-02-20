@@ -22,7 +22,7 @@ export default function LandingPage() {
         {/* Central 3D Spline Scene */}
         <div className="absolute inset-0 z-10 flex items-center justify-center -mt-10 lg:-mt-20">
           <div className="w-full h-full max-w-[1200px] max-h-[900px]">
-            <Spline scene="/scene-clean.splinecode" />
+            <Spline scene={`${import.meta.env.BASE_URL}scene-clean.splinecode`} />
           </div>
         </div>
 

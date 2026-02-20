@@ -1,9 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, Scale, Users, MessageSquare, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Spline from '@splinetool/react-spline';
 
+class SplineErrorWrapper extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Spline rendering error:", error);
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 export default function LandingPage() {
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const checkSize = () => setIsDesktop(window.innerWidth >= 768);
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
       
@@ -19,12 +45,16 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Central 3D Spline Scene */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center -mt-10 lg:-mt-20">
-          <div className="w-full h-full max-w-[1200px] max-h-[900px]">
-            <Spline scene={`${import.meta.env.BASE_URL}scene-clean.splinecode`} />
+        {/* Central 3D Spline Scene - Desktop Only */}
+        {isDesktop && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center -mt-10 lg:-mt-20">
+            <div className="w-full h-full max-w-[1200px] max-h-[900px]">
+              <SplineErrorWrapper>
+                <Spline scene={`${import.meta.env.BASE_URL}scene-clean.splinecode`} />
+              </SplineErrorWrapper>
+            </div>
           </div>
-        </div>
+        )}
 
 
 

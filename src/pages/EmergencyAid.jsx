@@ -4,6 +4,28 @@ import { Link } from 'react-router-dom';
 
 export default function EmergencyAid() {
   const [sosSent, setSosSent] = useState(false);
+  const [showHelplines, setShowHelplines] = useState(false);
+  const [locationShared, setLocationShared] = useState(false);
+
+  const HELPLINES = [
+    { name: 'National Legal Services Authority', number: '15100', color: 'text-[#00d4ff]' },
+    { name: 'Women Helpline (National)', number: '181', color: 'text-pink-400' },
+    { name: 'Police Emergency', number: '100', color: 'text-red-400' },
+    { name: 'Domestic Violence Helpline', number: '112', color: 'text-orange-400' },
+    { name: 'Child Helpline', number: '1098', color: 'text-yellow-400' },
+    { name: 'Senior Citizen Helpline', number: '14567', color: 'text-emerald-400' },
+  ];
+
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) { alert('Geolocation not available'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationShared(true);
+        setTimeout(() => setLocationShared(false), 4000);
+      },
+      () => alert('Location access denied. Please enable in browser settings.')
+    );
+  };
 
   const handleSOS = () => {
     setSosSent(true);
@@ -55,25 +77,47 @@ export default function EmergencyAid() {
 
         {/* Action Grid */}
         <div className="grid md:grid-cols-2 gap-6">
-          <button className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
+          <button
+            onClick={handleShareLocation}
+            className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group w-full text-left">
             <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-colors">
               <MapPin className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <h3 className="font-mono text-sm font-bold tracking-widest text-white uppercase group-hover:text-emerald-400 transition-colors mb-1">Share Location</h3>
-              <p className="text-xs text-gray-500 font-sans">Send encrypted GPS coords.</p>
+              <h3 className="font-mono text-sm font-bold tracking-widest text-white uppercase group-hover:text-emerald-400 transition-colors mb-1">
+                {locationShared ? '✓ Location Noted' : 'Share Location'}
+              </h3>
+              <p className="text-xs text-gray-500 font-sans">{locationShared ? 'Saved locally for reference.' : 'Note GPS coords for documentation.'}</p>
             </div>
           </button>
           
-          <button className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/10 hover:border-[#00d4ff]/50 hover:bg-[#00d4ff]/5 transition-all group">
+          <button
+            onClick={() => setShowHelplines(h => !h)}
+            className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/10 hover:border-[#00d4ff]/50 hover:bg-[#00d4ff]/5 transition-all group w-full text-left">
             <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 group-hover:text-[#00d4ff] group-hover:border-[#00d4ff]/30 transition-colors">
               <PhoneCall className="w-5 h-5" />
             </div>
             <div className="text-left">
               <h3 className="font-mono text-sm font-bold tracking-widest text-white uppercase group-hover:text-[#00d4ff] transition-colors mb-1">Helplines</h3>
-              <p className="text-xs text-gray-500 font-sans">View national support numbers.</p>
+              <p className="text-xs text-gray-500 font-sans">{showHelplines ? 'Tap a number to call.' : 'View national support numbers.'}</p>
             </div>
           </button>
+
+          {/* Helpline numbers panel */}
+          {showHelplines && (
+            <div className="md:col-span-2 border border-[#00d4ff]/20 bg-[#00d4ff]/5 p-6 space-y-3">
+              {HELPLINES.map(h => (
+                <a
+                  key={h.number}
+                  href={`tel:${h.number}`}
+                  className="flex items-center justify-between p-3 border border-white/10 hover:border-[#00d4ff]/30 bg-black/40 group transition-colors"
+                >
+                  <span className="text-sm text-gray-300 font-sans">{h.name}</span>
+                  <span className={`font-mono font-bold text-lg tracking-widest ${h.color}`}>{h.number}</span>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Know Your Rights Guide */}

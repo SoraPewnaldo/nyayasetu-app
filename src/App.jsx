@@ -9,6 +9,8 @@ import LawyerProfile from './pages/LawyerProfile';
 import SecureChat from './pages/SecureChat';
 import EmergencyAid from './pages/EmergencyAid';
 import Community from './pages/Community';
+import { ModelLoaderProvider } from './components/ModelLoaderProvider.jsx';
+import ModelStatusBar from './components/ModelStatusBar.jsx';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -63,16 +65,21 @@ export default function App() {
       <div className="min-h-screen bg-black text-white selection:bg-[#00d4ff]/30 font-sans flex flex-col">
         <GlobalNav />
         <main className="w-full flex-1 relative">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/triage" element={<AITriage />} />
-            <Route path="/classification" element={<ClassificationResults />} />
-            <Route path="/lawyers" element={<LawyerMatching />} />
-            <Route path="/lawyer/:id" element={<LawyerProfile />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/consultation" element={<SecureChat />} />
-            <Route path="/emergency" element={<EmergencyAid />} />
-          </Routes>
+          {/* ModelLoaderProvider initializes RunAnywhere SDK + LLM on first render */}
+          <ModelLoaderProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/triage" element={<AITriage />} />
+              <Route path="/classification" element={<ClassificationResults />} />
+              <Route path="/lawyers" element={<LawyerMatching />} />
+              <Route path="/lawyer/:id" element={<LawyerProfile />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/consultation" element={<SecureChat />} />
+              <Route path="/emergency" element={<EmergencyAid />} />
+            </Routes>
+            {/* Floating model status bar — always visible, uses context */}
+            <ModelStatusBar />
+          </ModelLoaderProvider>
         </main>
       </div>
     </Router>

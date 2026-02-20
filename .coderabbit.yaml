@@ -1,0 +1,96 @@
+# CodeRabbit Configuration — NyayaSetu
+# https://docs.coderabbit.ai/configure/
+# AI-powered code review tuned for a privacy-first, on-device legal AI app.
+
+language: "en-US"
+
+# --- Review settings ---
+reviews:
+  # Enable automatic review on every PR
+  auto_review:
+    enabled: true
+    # Also review draft PRs (useful for hackathon rapid iteration)
+    drafts: true
+    # Ignore bot-generated commits
+    ignore_title_keywords:
+      - "chore(deps)"
+      - "bot"
+
+  # Profile: chill = fewer nit comments, assertive = strict
+  profile: "chill"
+
+  # High-level summary of each PR
+  high_level_summary: true
+
+  # Request changes instead of just commenting when critical issues are found
+  request_changes_workflow: false
+
+  # Poem on PR approval 🎉
+  poem: true
+
+  # Focus areas for review instructions
+  path_instructions:
+    # LLM service is safety-critical — be extra thorough
+    - path: "src/services/llm/**"
+      instructions: |
+        This service wraps the RunAnywhere Web SDK for on-device LLM inference.
+        Review for:
+        - Correct use of LLMFramework enum (must be LLMFramework.LlamaCpp for GGUF models)
+        - CompactModelDef must include: id, name, repo/url, files, framework, modality
+        - EventBus 'model.downloadProgress' event data uses: progress, bytesDownloaded, totalBytes
+        - RunAnywhere.loadModel() must be called AFTER downloadModel()
+        - modelLoaded flag must be reset on error
+        - No API keys, no cloud endpoints
+
+    # Classification must NEVER depend on LLM (PRD §4.2)
+    - path: "src/services/classification/**"
+      instructions: |
+        Emergency detection (checkEmergency) must be standalone and NOT call the LLM service.
+        This is a hard PRD requirement (§4.2). Flag any dependency on llmService in this file.
+        Also verify keyword lists cover both Hindi transliterations and English legal terms.
+
+    # Crypto service handles all encryption — be strict
+    - path: "src/services/encryption/**"
+      instructions: |
+        This is the AES-GCM encryption layer. Review for:
+        - IV must be 12 bytes (96-bit), randomly generated per encryption
+        - Key must be 256-bit AES-GCM
+        - Ciphertext must never be logged or stored in plaintext
+        - Session key must be cleared on session end
+        - Web Crypto API usage must match browser compatibility matrix
+
+    # IndexedDB — ensure no plaintext chat storage
+    - path: "src/services/storage/**"
+      instructions: |
+        Check that chat messages stored in CHAT_HISTORY store are always encrypted payloads,
+        never plaintext strings. Lawyer embeddings are Float32Array serialized as Array — verify
+        this is deserialized correctly back to Float32Array before cosine similarity.
+
+    # React hooks — check for memory leaks and stale closures
+    - path: "src/hooks/**"
+      instructions: |
+        Review React hooks for:
+        - Missing useEffect cleanup (EventBus subscriptions, model load cancellation)
+        - Stale closure bugs in useCallback (missing deps)
+        - Race conditions between model auto-load and user-triggered download
+
+    # Pages — UI/UX review
+    - path: "src/pages/**"
+      instructions: |
+        This is a legal aid app targeting users in distress. Review for:
+        - Emergency flows must not have any loading delays (< 100ms to navigate)
+        - Accessibility: inputs must have labels, buttons must have aria roles
+        - No hardcoded lawyer phone numbers (must come from lawyerDatabase.js)
+
+# --- Chat settings (PR comments / @coderabbit mentions) ---
+chat:
+  auto_reply: true
+
+# --- Ignore paths ---
+ignore:
+  - "dist/**"
+  - "node_modules/**"
+  - "*.min.js"
+  - "public/**"
+  - ".github/**"
+  - "**/*.md"

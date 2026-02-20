@@ -43,7 +43,7 @@ pipeline {
         stage('Deploy to GitHub Pages') {
             steps {
                 echo 'Deploying built index to gh-pages branch...'
-                bat 'npx gh-pages -d dist'
+                bat 'npx gh-pages -u "Jenkins Build Server <jenkins@nyayasetu.local>" -d dist'
             }
         }
     }

@@ -43,7 +43,9 @@ pipeline {
         stage('Deploy to GitHub Pages') {
             steps {
                 echo 'Deploying built index to gh-pages branch...'
-                bat 'npx gh-pages -u "Jenkins Build Server <jenkins@nyayasetu.local>" -d dist'
+                withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_TOKEN')]) {
+                    bat 'npx gh-pages -u "Jenkins Build Server <jenkins@nyayasetu.local>" -r "https://%GITHUB_TOKEN%@github.com/SoraPewnaldo/nyayasetu-app.git" -d dist'
+                }
             }
         }
     }

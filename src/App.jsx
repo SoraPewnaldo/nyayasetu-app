@@ -58,7 +58,7 @@ function GlobalNav() {
 
 export default function App() {
   return (
-    <Router>
+    <Router basename="/nyayasetu-app">
       <ScrollToTop />
       <div className="min-h-screen bg-black text-white selection:bg-[#00d4ff]/30 font-sans flex flex-col">
         <GlobalNav />

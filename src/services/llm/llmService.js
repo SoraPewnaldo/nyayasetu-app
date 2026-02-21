@@ -68,7 +68,7 @@ class LLMService {
     await RunAnywhere.initialize({
       environment: import.meta.env.DEV ? 'development' : 'production',
       debug: import.meta.env.DEV,
-    });
+    }, import.meta.env.BASE_URL + 'wasm/');
 
     // Register models with correct CompactModelDef shape
     RunAnywhere.registerModels([

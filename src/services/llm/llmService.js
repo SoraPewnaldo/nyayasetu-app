@@ -36,14 +36,12 @@ const MODELS = {
   },
 };
 
-const LEGAL_SYSTEM_PROMPT = `You are NyayaSetu AI, an Indian legal assistant. Help users understand their legal rights in India.
-
-Rules:
-1. Use simple language non-lawyers can understand.
-2. Reference relevant Indian laws and acts where applicable.
-3. Structure: Summary → Relevant Law → Suggested Steps → Disclaimer.
-4. Keep under 350 words.
-5. Always end with: "This is not legal advice. Please consult a licensed advocate."`;
+const LEGAL_SYSTEM_PROMPT = `You are NyayaSetu AI, a concise Indian legal assistant. Help users understand their rights under Indian law.
+Respond in this format:
+**Summary:** (1-2 sentences)
+**Relevant Law:** (act/section)
+**Steps:** (numbered, max 3)
+**Note:** This is not legal advice. Consult a licensed advocate.`;
 
 class LLMService {
   constructor() {
@@ -169,33 +167,53 @@ class LLMService {
       throw new Error('Model not loaded. Download the AI model first using the status bar.');
     }
 
-    const prompt = `User's Legal Issue: "${userInput}"
-Classification: ${classification?.category ?? 'Unknown'}
-Urgency Level: ${classification?.urgency ?? 'Medium'}
+    // Keep prompt short to stay within LFM2 350M 2048-token context window
+    const category = classification?.label ?? classification?.category ?? 'General Legal';
+    const prompt = `Legal issue: ${userInput.slice(0, 300)}\nCategory: ${category}\n\nProvide structured legal guidance:`;
 
-Please analyze this legal situation and provide structured guidance.`;
-
-    this._abortController = new AbortController();
-
-    const { stream, result } = await TextGeneration.generateStream(prompt, {
-      systemPrompt: LEGAL_SYSTEM_PROMPT,
-      maxTokens: 500,
-      temperature: 0.3,
-      topP: 0.9,
-    });
-
-    let fullText = '';
-    for await (const token of stream) {
-      fullText += token;
-      onToken?.(token);
+    let streamingResult;
+    try {
+      streamingResult = await TextGeneration.generateStream(prompt, {
+        systemPrompt: LEGAL_SYSTEM_PROMPT,
+        maxTokens: 300,
+        temperature: 0.4,
+        topP: 0.9,
+        streamingEnabled: true,
+      });
+    } catch (initErr) {
+      console.error('[LLMService] generateStream init error:', initErr);
+      throw new Error(`AI inference failed to start (${initErr.message ?? initErr}). Try reloading the page.`);
     }
 
-    const finalResult = await result;
+    const { stream, result, cancel } = streamingResult;
+    this._cancelStream = cancel;
+
+    let fullText = '';
+    try {
+      for await (const token of stream) {
+        if (typeof token === 'string') {
+          fullText += token;
+          onToken?.(token);
+        }
+      }
+    } catch (streamErr) {
+      console.error('[LLMService] Stream error mid-generation:', streamErr);
+      // If we already got some text, return it rather than throwing
+      if (fullText.length > 20) {
+        onToken?.('\n\n*(Response ended early)*');
+        return { text: fullText, tokensPerSecond: 0, latencyMs: 0, modelUsed: MODELS.primary.id };
+      }
+      throw streamErr;
+    }
+
+    let finalResult;
+    try { finalResult = await result; } catch { finalResult = {}; }
+
     return {
       text: fullText,
-      tokensPerSecond: finalResult.tokensPerSecond,
-      latencyMs: finalResult.latencyMs,
-      modelUsed: finalResult.modelUsed,
+      tokensPerSecond: finalResult.tokensPerSecond ?? 0,
+      latencyMs: finalResult.latencyMs ?? 0,
+      modelUsed: finalResult.modelUsed ?? MODELS.primary.id,
     };
   }
 
@@ -210,7 +228,10 @@ Please analyze this legal situation and provide structured guidance.`;
     return result.text;
   }
 
-  cancel() { this._abortController?.abort(); }
+  cancel() {
+    this._cancelStream?.();
+    this._abortController?.abort();
+  }
 
   getActiveModelLabel() { return MODELS.primary.label; }
 
